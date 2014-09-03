@@ -37,7 +37,8 @@ int priority_queue::pop()
 	if(is_empty() == false)
 	{
 		int res = get_front();
-		buff.erase(buff.begin() + 1);
+		swap(buff.begin() + 1, buff.begin() + buff.size() - 1);
+		buff.erase(buff.begin() + buff.size() - 1);
 		modify();
 		return res;
 	}
