@@ -8,34 +8,8 @@
 entity移动时候利用这两个基本操作实现位置在树中的更新。
 **************************************/
 
-enum Direct
-{
-	lu = 0,
-	ru = 1,
-	rd = 2,
-	ld = 3
-};
-
-//基本坐标
-struct Position
-{
-	double x;
-	double y;
-	Position(double _x = 0.0, double _y = 0.0):x(_x), y(_y){}
-	inline bool operator = (const Position &pos) const
-	{
-		return x == pos.x && y == pos.y;
-	}
-};
-
-//矩形
-struct Rectangle
-{
-	Position lu;
-	Position rd;
-	Rectangle(const Position _lu, const Position _rd):lu(_lu), rd(_rd){}
-};
-
+#include<vector>
+#include"BasicType.h"
 //四叉树类
 class QTree
 {
@@ -46,37 +20,31 @@ private:
 		Position *entity;	//实体的坐标，会随着实体移动，所以只是持有一个坐标的指针，不拷贝，不析构
 		Node * sub_area[4];
 		Node * parent;		//指向父亲的指针，调节的时候会用到
-		Node(const Rectangle , Node *);
+		Node(const Rectangle &, Node *);
 		~Node();
-	};
+
+        //辅助函数，显示标记为内联函数
+        inline bool is_leaf() const
+        {
+            return sub_area[lu] == nullptr &&
+                sub_area[ru] == nullptr &&
+                sub_area[rd] == nullptr &&
+                sub_area[ld] == nullptr;
+        }
+    };
 
 	Node *root;
 public:
-	QTree(const Rectangle );
+	QTree(const Rectangle &);
 	~QTree();
 	void insert(Position *);
 	void remove(Position *);
+    std::vector<Position> findInRect(const Rectangle &rt);
 private:
 	void insert(Position *, Node &);
 	void remove(Position *, Node &);
-	void adjust(Node &);	//删除操作可能出现四个叶子都没有保存实体，用此函数调整
-
-	//辅助函数，显示标记为内联函数
-	inline bool is_leaf(const Node &r)
-	{
-		return r.sub_area[lu] == nullptr &&
-			r.sub_area[ru] == nullptr &&
-			r.sub_area[rd] == nullptr &&
-			r.sub_area[ld] == nullptr;
-	}
-
-	inline bool is_contain(const Rectangle &rec, const Position *pos)
-	{
-		return rec.lu.x <= pos->x && 
-			rec.lu.y >= pos->y &&
-			rec.rd.x >= pos->x && 
-			rec.rd.y <= pos->y;
-	}
+    void findInNode(const Node &, const Rectangle &, std::vector<Position> &);
+	void adjust(Node &);	//删除操作可能出现四个叶子都没有保存实体，用此函数调整 
 	
 	inline Rectangle cut_rect(const Rectangle &rec, const Direct dir)
 	{

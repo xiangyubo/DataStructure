@@ -1,5 +1,5 @@
 #include"QTree.h"
-QTree::Node::Node(const Rectangle rec, Node *p):
+QTree::Node::Node(const Rectangle &rec, Node *p):
 	area(rec), entity(nullptr), parent(p)	//构造出来的节点默认都是叶子
 {
 	sub_area[lu] = sub_area[ru] = sub_area[rd] = sub_area[ld] = nullptr;
@@ -15,7 +15,7 @@ QTree::Node::~Node()
 	delete sub_area[ld];
 }
 
-QTree::QTree(const Rectangle rec)	//四叉树需要地图大小（矩形）来初始化
+QTree::QTree(const Rectangle &rec)	//四叉树需要地图大小（矩形）来初始化
 {
 	root = new Node(rec, nullptr);
 }
@@ -27,7 +27,7 @@ QTree::~QTree()
 
 void QTree::insert(Position *pos)
 {
-	if(is_contain(root->area, pos) == true)
+	if(root->area.isContain(*pos) == true)
 	{
 		insert(pos, *root);
 	}
@@ -35,11 +35,11 @@ void QTree::insert(Position *pos)
 
 void QTree::insert(Position *pos, Node &r)
 {
-	if(is_leaf(r) == false)	//若不是叶子，那么肯定不能插入，只能插入它其中一个子区域里面
+	if(r.is_leaf() == false)	//若不是叶子，那么肯定不能插入，只能插入它其中一个子区域里面
 	{
 		for(int dir = lu; dir <= ld; ++dir)
 		{
-			if(is_contain(r.sub_area[dir]->area, pos) == true)
+            if(r.sub_area[dir]->area.isContain(*pos) == true)
 			{
 				insert(pos, *r.sub_area[dir]);
 				break;
@@ -51,11 +51,11 @@ void QTree::insert(Position *pos, Node &r)
 		for(int dir = lu; dir <= ld; ++dir)
 		{
 			r.sub_area[dir] = new Node(cut_rect(r.area, static_cast<Direct>(dir)), &r);
-			if(is_contain(r.sub_area[dir]->area, pos) == true)
+			if(r.sub_area[dir]->area.isContain(*pos) == true)
 			{
 				insert(pos, *r.sub_area[dir]);
 			}
-			if(is_contain(r.sub_area[dir]->area, r.entity) == true)
+            if(r.sub_area[dir]->area.isContain(*r.entity) == true)
 			{
 				insert(r.entity, *r.sub_area[dir]);
 			}
@@ -80,17 +80,45 @@ void QTree::remove(Position *pos, Node &r)
 		r.entity = nullptr;
 		adjust(r);
 	}
-	else if(is_leaf(r) == false)
+	else if(r.is_leaf() == false)
 	{
 		for(int dir = lu; dir <= ld; ++dir)
 		{
-			if(is_contain(r.sub_area[dir]->area, pos) == true)
+			if(r.sub_area[dir]->area.isContain(*pos) == true)
 			{
 				remove(pos, *r.sub_area[dir]);
 				break;
 			}
 		}
 	}
+}
+
+std::vector<Position> QTree::findInRect(const Rectangle &rt)
+{
+    std::vector<Position> ret;
+    findInNode(*root, rt, ret);
+    return ret;
+}
+
+void QTree::findInNode(const Node &r, const Rectangle &rt, std::vector<Position> &ret)
+{
+    if(r.area.isIntersect(rt) == true)
+    {
+        if(r.is_leaf() == true)
+        {
+            if(r.entity != nullptr && rt.isContain(*r.entity))
+            {
+                ret.push_back(*r.entity);
+            }
+        }
+        else
+        {
+            for(int i = lu; i <= ld; ++i)
+            {
+                findInNode(*r.sub_area[i], rt, ret);
+            }
+        }
+    }
 }
 
 void QTree::adjust(Node &r)
@@ -103,7 +131,7 @@ void QTree::adjust(Node &r)
 	bool flag = true;
 	for(int dir = lu; dir <= ld; ++dir)
 	{
-		if(is_leaf(*p->sub_area[dir]) != true || p->sub_area[dir]->entity != nullptr)
+		if(p->sub_area[dir]->is_leaf() != true || p->sub_area[dir]->entity != nullptr)
 		{
 			flag = false;
 			break;
