@@ -9,6 +9,7 @@ entity移动时候利用这两个基本操作实现位置在树中的更新。
 **************************************/
 
 #include<vector>
+#include<memory>
 #include"BasicType.h"
 //四叉树类
 class QTree
@@ -16,11 +17,16 @@ class QTree
 private:
 	struct Node
 	{
+        typedef std::vector<Position*> Entities;
+        typedef std::size_t Count;
+        
+        Count count;
 		Rectangle area;
-		Position *entity;	//实体的坐标，会随着实体移动，所以只是持有一个坐标的指针，不拷贝，不析构
-		Node * sub_area[4];
+        Entities entitys;   //实体的坐标，会随着实体移动，所以只是持有一个坐标的指针，不拷贝，不析构
+        Node * sub_area[4];
 		Node * parent;		//指向父亲的指针，调节的时候会用到
-		Node(const Rectangle &, Node *);
+		
+        Node(const Rectangle &, Node *, Count c = 4);
 		~Node();
 
         //辅助函数，显示标记为内联函数
@@ -30,6 +36,33 @@ private:
                 sub_area[ru] == nullptr &&
                 sub_area[rd] == nullptr &&
                 sub_area[ld] == nullptr;
+        }
+
+        inline bool is_full() const
+        {
+            return count < entitys.size();
+        }
+
+        inline bool is_empty() const
+        {
+            return entitys.size() == 0;
+        }
+
+        inline Entities::iterator find_entity(const Position &pos)
+        {
+            for(auto it = entitys.begin(); it != entitys.end(); ++it)
+            {
+                if(pos == **it)
+                {
+                    return it;
+                }
+            }
+            return entitys.end();
+        }
+
+        inline void erase_entity(const Entities::iterator &it)
+        {
+            entitys.erase(it);
         }
     };
 
@@ -43,7 +76,8 @@ public:
 private:
 	void insert(Position *, Node &);
 	void remove(Position *, Node &);
-    void findInNode(const Node &, const Rectangle &, std::vector<Position> &);
+    //void move(Position *);
+    void find_in_node(const Node &, const Rectangle &, std::vector<Position> &);
 	void adjust(Node &);	//删除操作可能出现四个叶子都没有保存实体，用此函数调整 
 	
 	inline Rectangle cut_rect(const Rectangle &rec, const Direct dir)

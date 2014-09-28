@@ -1,13 +1,12 @@
 #include"QTree.h"
-QTree::Node::Node(const Rectangle &rec, Node *p):
-	area(rec), entity(nullptr), parent(p)	//构造出来的节点默认都是叶子
+QTree::Node::Node(const Rectangle &rec, Node *p, Count c):
+    area(rec), parent(p), count(c)	//构造出来的节点默认都是叶子
 {
 	sub_area[lu] = sub_area[ru] = sub_area[rd] = sub_area[ld] = nullptr;
 }
 
 QTree::Node::~Node()
 {
-	entity = nullptr;
 	parent = nullptr;
 	delete sub_area[lu];
 	delete sub_area[ru];
@@ -27,7 +26,7 @@ QTree::~QTree()
 
 void QTree::insert(Position *pos)
 {
-	if(root->area.isContain(*pos) == true)
+	if(root->area.is_contain(*pos) == true)
 	{
 		insert(pos, *root);
 	}
@@ -39,32 +38,36 @@ void QTree::insert(Position *pos, Node &r)
 	{
 		for(int dir = lu; dir <= ld; ++dir)
 		{
-            if(r.sub_area[dir]->area.isContain(*pos) == true)
+            if(r.sub_area[dir]->area.is_contain(*pos) == true)
 			{
 				insert(pos, *r.sub_area[dir]);
 				break;
 			}
 		}
 	}
-	else if(r.entity != nullptr)	//叶子节点，但是已经存储了一个实体，需要把这个叶子升级成中间节点
-	{								//然后再递归的插入原有的实体和新的实体
-		for(int dir = lu; dir <= ld; ++dir)
-		{
-			r.sub_area[dir] = new Node(cut_rect(r.area, static_cast<Direct>(dir)), &r);
-			if(r.sub_area[dir]->area.isContain(*pos) == true)
-			{
-				insert(pos, *r.sub_area[dir]);
-			}
-            if(r.sub_area[dir]->area.isContain(*r.entity) == true)
-			{
-				insert(r.entity, *r.sub_area[dir]);
-			}
-		}
-		r.entity = nullptr;
-	}
-	else	//叶子节点，并且没有存储实体，直接存储实体
-	{
-		r.entity = pos;
+    else	//叶子节点，把实体存入其中
+    {
+        r.entitys.push_back(pos);
+        if(r.is_full() == true)     //如果这个叶子节点存储满了
+        {
+            for(int dir = lu; dir <= ld; ++dir)
+            {
+                r.sub_area[dir] = new Node(cut_rect(r.area, static_cast<Direct>(dir)), &r);
+                for(auto it = r.entitys.begin(); it != r.entitys.end(); )
+                {
+                    if(r.sub_area[dir]->area.is_contain(**it) == true)
+                    {
+                        insert(&**it, *r.sub_area[dir]);
+                        it = r.entitys.erase(it);
+                    }
+                    else
+                    {
+                        ++it;
+                    }
+                }
+            }
+            r.entitys.clear();
+        }
 	}
 }
 
@@ -75,16 +78,21 @@ void QTree::remove(Position *pos)
 
 void QTree::remove(Position *pos, Node &r)
 {
-	if(r.entity != nullptr && r.entity == pos)
+    if(r.area.is_contain(*pos) == false)
+    {
+        return ;
+    }
+    auto it = r.find_entity(*pos);
+    if(it != r.entitys.end())
 	{
-		r.entity = nullptr;
+        r.erase_entity(it);
 		adjust(r);
 	}
 	else if(r.is_leaf() == false)
 	{
 		for(int dir = lu; dir <= ld; ++dir)
 		{
-			if(r.sub_area[dir]->area.isContain(*pos) == true)
+			if(r.sub_area[dir]->area.is_contain(*pos) == true)
 			{
 				remove(pos, *r.sub_area[dir]);
 				break;
@@ -96,26 +104,29 @@ void QTree::remove(Position *pos, Node &r)
 std::vector<Position> QTree::findInRect(const Rectangle &rt)
 {
     std::vector<Position> ret;
-    findInNode(*root, rt, ret);
+    find_in_node(*root, rt, ret);
     return ret;
 }
 
-void QTree::findInNode(const Node &r, const Rectangle &rt, std::vector<Position> &ret)
+void QTree::find_in_node(const Node &r, const Rectangle &rt, std::vector<Position> &ret)
 {
-    if(r.area.isIntersect(rt) == true)
+    if(r.area.is_intersect(rt) == true)
     {
         if(r.is_leaf() == true)
         {
-            if(r.entity != nullptr && rt.isContain(*r.entity))
+            for(auto it = r.entitys.begin(); it != r.entitys.end(); ++it)
             {
-                ret.push_back(*r.entity);
+                if(rt.is_contain(**it) == true)
+                {
+                    ret.push_back(**it);
+                }
             }
         }
         else
         {
             for(int i = lu; i <= ld; ++i)
             {
-                findInNode(*r.sub_area[i], rt, ret);
+                find_in_node(*r.sub_area[i], rt, ret);
             }
         }
     }
@@ -123,15 +134,15 @@ void QTree::findInNode(const Node &r, const Rectangle &rt, std::vector<Position>
 
 void QTree::adjust(Node &r)
 {
-	Node *p = r.parent;
-	if(p == nullptr)	//已经降级到根了，不能再降
+    if(r.parent == nullptr || r.is_empty() != true)	//叶子节点还存储有实体或者已经降级到根了，不能再降
 	{
 		return ;
 	}
+    Node *p = r.parent;
 	bool flag = true;
 	for(int dir = lu; dir <= ld; ++dir)
 	{
-		if(p->sub_area[dir]->is_leaf() != true || p->sub_area[dir]->entity != nullptr)
+        if(p->sub_area[dir]->is_leaf() != true || p->sub_area[dir]->is_empty() != true)
 		{
 			flag = false;
 			break;

@@ -17,8 +17,14 @@ int main()
 		phymap.insert(dot[i]);
 	}
     cout<<"---------------------------"<<endl;
-    auto ans = phymap.findInRect(rec);
-    for(int i = 0; i < ans.size(); ++i)
+    auto ans = phymap.findInRect(Rectangle(Position(5.0, 5.0), Position(5.10, 5.10)));
+    for(size_t i = 0; i < ans.size(); ++i)
+    {
+        cout<<ans[i].x<<"   "<<ans[i].y<<endl;
+    }
+    cout<<"---------------------------"<<endl;
+    ans = phymap.findInRect(Rectangle(Position(25.0, 75.0), Position(75.0, 25.0)));
+    for(size_t i = 0; i < ans.size(); ++i)
     {
         cout<<ans[i].x<<"   "<<ans[i].y<<endl;
     }
@@ -27,8 +33,8 @@ int main()
 		phymap.remove(dot[i]);
 	}
     for(int i = 0; i < N; ++i)
-	{
-		delete dot[i];
-	}
+    {
+        delete dot[i];
+    }
 	return 0;
 }
