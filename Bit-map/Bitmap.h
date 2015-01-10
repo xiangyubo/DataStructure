@@ -16,6 +16,13 @@ public:
     Bitmap():buffer(nullptr), size(0), is_init(false), width(0)
     {}
 
+    ~Bitmap()
+    {
+        delete []buffer;
+        size = 0;
+        is_init = false;
+    }
+
     bool Init(uint32_t  _s)
     {
         size = _s;
