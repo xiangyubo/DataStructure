@@ -11,9 +11,11 @@ private:
 
     struct _FreeNode 
     {
-        _FreeNode   *prePtr;
-        uint8_t     data[itemSize];
-
+        union
+        {
+            _FreeNode   *prePtr;
+            uint8_t     data[itemSize];
+        };
         explicit _FreeNode():prePtr(nullptr)
         {
 
@@ -70,16 +72,14 @@ public:
             blockHeader = block;
             blockSize <<= 2;
         }
-        void *ret = freeNodeHeader->data;
+        void *ret = freeNodeHeader;
         freeNodeHeader = freeNodeHeader->prePtr;
         return ret;
     }
 
     void Free(void *ptr)
     {
-        _FreeNode *temp = reinterpret_cast<_FreeNode*>(
-            static_cast<char*>(ptr)-sizeof(_FreeNode*)
-            );
+        _FreeNode *temp = reinterpret_cast<_FreeNode*>(ptr);
         temp->prePtr = freeNodeHeader;
         freeNodeHeader = temp;
     }
