@@ -1,51 +1,70 @@
-enum Direct
+#ifndef __QTREE_POINT__
+#define __QTREE_POINT__
+
+template<typename T>
+T MyMax(const T &a, const T &b)
 {
-	lu = 0,
-	ru = 1,
-	rd = 2,
-	ld = 3
-};
+    return a < b ? b : a;
+}
+
+template<typename T>
+T MyMin(const T &a, const T &b)
+{
+    return a < b ? a : b;
+}
 
 //基本坐标
-struct Position
+struct Point
 {
-	double x;
-	double y;
-	Position(double _x = 0.0, double _y = 0.0):x(_x), y(_y){}
-	inline bool operator == (const Position &pos) const
-	{
-		return x == pos.x && y == pos.y;
-	}
+    float x;
+    float y;
+
+    Point():x(0), y(0)
+    {
+        
+    }
+
+    Point(float xx, float yy):x(xx), y(yy)
+    {
+        
+    }
+
+    bool operator == (const Point &pos) const
+    {
+        return (*(int*)&x == *(int*)&pos.x) && (*(int*)&y == *(int*)&pos.y);
+    }
 };
 
 //矩形
-struct Rectangle
+struct Rect
 {
-	Position lu;
-	Position rd;
-	Rectangle(const Position _lu, const Position _rd):lu(_lu), rd(_rd) {}
-    inline bool is_contain(const Position &pos) const
-    {
-        return lu.x <= pos.x && 
-			lu.y >= pos.y &&
-			rd.x >= pos.x && 
-			rd.y <= pos.y;
-    }
-    inline bool is_intersect(const Rectangle &rt) const
-    {
-        Position ld(lu.x, rd.y);
-        Position ru(rd.x, lu.y);
-        Position rld(rt.lu.x, rt.rd.y);
-        Position rru(rt.rd.x, rt.lu.y);
+    Point leftUp;
+    Point rightDown;
 
-        return rt.is_contain(ld) ||
-            rt.is_contain(lu) ||
-            rt.is_contain(rd) ||
-            rt.is_contain(ru) ||
-            is_contain(rld) ||
-            is_contain(rt.lu) ||
-            is_contain(rru) ||
-            is_contain(rt.rd);
+    Rect(const Point _lu, const Point _rd):leftUp(_lu), rightDown(_rd) 
+    {
+        if(!(leftUp.x < rightDown.x && leftUp.y > rightDown.y))
+        {
+            leftUp.x = leftUp.y = rightDown.x = rightDown.y = 0.0f;
+        }
+    }
+    
+    bool IsContain(const Point &pos) const
+    {
+        return leftUp.x <= pos.x && 
+            leftUp.y > pos.y &&
+            rightDown.x > pos.x && 
+            rightDown.y <= pos.y;
+    }
+    
+    bool IsIntersect(const Rect &rt) const
+    {
+        if(leftUp.x > rt.rightDown.x)  return false;
+        if(leftUp.y < rt.rightDown.y)  return false;
+        if(rightDown.x < rt.leftUp.x)  return false;
+        if(rightDown.y > rt.leftUp.y)  return false;
+        return true;
     }
 };
 
+#endif
