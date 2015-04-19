@@ -70,7 +70,6 @@ protected:
     //  性。递归实现插入\调整，配合四叉树实
     //  现节点内部直接删除。
     //*************************************
-    template<typename U>
     class QTreeNode
     {
     public:
@@ -101,7 +100,7 @@ protected:
             LeftDown = 3
         };
 
-        typedef std::list<QTreePos<U>*> Entities;
+        typedef std::list<QTreePos<T>*> Entities;
     private:
         //节点管理的区域
         Rect        area;
@@ -125,7 +124,7 @@ protected:
         static int count;
 
     public:
-        QTreeNode(Rect &r, QuadTree<U> *tr, QTreeNode *par = nullptr):
+        QTreeNode(Rect &r, QuadTree<T> *tr, QTreeNode *par = nullptr):
             area(r), tree(tr), parent(par)
         {
             subAreas[LeftUp] = nullptr;
@@ -146,7 +145,7 @@ protected:
         }
 
         //递归插入QTreePos<T>类型节点，
-        void Insert(QTreePos<U> *pos, int flag)
+        void Insert(QTreePos<T> *pos, int flag)
         {
             Point location;
             if(flag == InsertPos)
@@ -252,7 +251,7 @@ protected:
         }
 
         //找到某个区域内的所有T节点
-        void FindInArea(Rect &rect, std::vector<U*> &ans)
+        void FindInArea(Rect &rect, std::vector<T*> &ans)
         {
             if(area.IsIntersect(rect) == true)
             {
@@ -354,15 +353,15 @@ protected:
 
 private:
     //四叉树树根
-    QTreeNode<T> *root;
+    QTreeNode *root;
 
     //entity在四叉树中查找表，用于支持热删除
-    std::map<T*, QTreeNode<T>*> findTable;
+    std::map<T*, QTreeNode*> findTable;
 
 public:
     QuadTree(Rect &rect)
     {
-        root = new QTreeNode<T>(rect, this);
+        root = new QTreeNode(rect, this);
     }
 
     ~QuadTree()
@@ -374,7 +373,7 @@ public:
     void Insert(T *ptr)
     {
         QTreePos<T> *pos = new QTreePos<T>(ptr);
-        root->Insert(pos, QTreeNode<T>::InsertFlag::InsertPos);
+        root->Insert(pos, QTreeNode::InsertFlag::InsertPos);
     }
 
     //删除T节点
@@ -382,7 +381,7 @@ public:
     {
         if(findTable.find(ptr) != findTable.end())
         {
-            QTreeNode<T> *node = findTable[ptr];
+            QTreeNode *node = findTable[ptr];
             node->Remove(ptr);
         }
     }
@@ -403,7 +402,6 @@ public:
 };
 
 template<typename T>
-template<typename U>
-int  QuadTree<T>::QTreeNode<U>::count = 4;
+int  QuadTree<T>::QTreeNode::count = 4;
 
 #endif
