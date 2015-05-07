@@ -86,17 +86,15 @@ public:
         {
             int index = Expand();
             Data data = LoadDataFrom(key);
-            if(index == -1)
+            _key2Data[key] = index;
+            if(index < _dataCache.size())
             {
-                _key2Data[key] = _dataCache.size();
-                _dataCache.push_back(data);
+                _dataCache[index] = data;
             }
             else
             {
-                _key2Data[key] = index;
-                _dataCache[index] = data;
+                _dataCache.push_back(data);
             }
-
             CacheUnitInfo unit;
             unit.lru = 0;
             unit.key = key;
@@ -116,7 +114,7 @@ public:
     //不同数据类型的不同加载方式
     virtual Data LoadDataFrom(Key key) = 0;
 
-    //扩展内存
+    //扩展内存，返回值为最小可用索引
     virtual int Expand() final
     {
         if(_dataCache.capacity() < _threshold)
@@ -148,7 +146,7 @@ public:
                 }
             }
         }
-        return -1;
+        return _dataCache.size();
     }
 
     //调整淘汰链
