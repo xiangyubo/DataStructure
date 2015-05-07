@@ -84,10 +84,18 @@ public:
         }
         else
         {
-            Expand();
+            int index = Expand();
             Data data = LoadDataFrom(key);
-            _key2Data[key] = _dataCache.size();
-            _dataCache.push_back(data);
+            if(index == -1)
+            {
+                _key2Data[key] = _dataCache.size();
+                _dataCache.push_back(data);
+            }
+            else
+            {
+                _key2Data[key] = index;
+                _dataCache[index] = data;
+            }
 
             CacheUnitInfo unit;
             unit.lru = 0;
@@ -109,14 +117,14 @@ public:
     virtual Data LoadDataFrom(Key key) = 0;
 
     //扩展内存
-    virtual void Expand() final
+    virtual int Expand() final
     {
         if(_dataCache.capacity() < _threshold)
         {
             if(_dataCache.size() == _dataCache.capacity())
             {
                 //内存占用量较低，用完时直接扩展
-                _dataCache.resize(2*_dataCache.capacity());
+                _dataCache.reserve(2*_dataCache.capacity());
             }
         }
         else if(_dataCache.capacity() >= _threshold)
@@ -127,17 +135,20 @@ public:
                 if(_hitRatio >= HitRatioLimit)
                 {
                     //内存占用较高且命中率高，扩展机制
-                    _dataCache.resize(2*_dataCache.capacity());
+                    _dataCache.reserve(2*_dataCache.capacity());
                 }
                 else
                 {
                     //内存占用较高且命中率不高，淘汰机制
                     CacheUnitInfo elim = _eliminateList.front();
+                    _eliminateList.pop_front();
                     int index = _key2Data[elim.key];
-                    _dataCache.erase(_dataCache.begin() + index);
+                    _key2Data.erase(elim.key);
+                    return index;
                 }
             }
         }
+        return -1;
     }
 
     //调整淘汰链
