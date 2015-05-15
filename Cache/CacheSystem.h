@@ -67,7 +67,7 @@ public:
         _threshold = thr>32?thr:1024;
     }
 
-    ~CacheSystem()
+    virtual ~CacheSystem()
     {
         _dataCache.clear();
         _eliminateList.clear();
